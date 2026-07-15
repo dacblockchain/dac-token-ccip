@@ -60,6 +60,43 @@ No Chainlink approval is required for the standard flow.
 **Rehearse on testnets first** with the same sequence on `--network sepolia` /
 `--network bscTestnet` (step 1 on Sepolia deploys a replica of the canonical token).
 
+## Testnet deployment (Sepolia ↔ BSC Testnet)
+
+The full sequence was rehearsed on 2026-07-15 and verified in both directions.
+Addresses are recorded in `deployments/sepolia.json` / `deployments/bscTestnet.json`:
+
+| Contract | Sepolia | BSC Testnet |
+| --- | --- | --- |
+| DACT token | [`0x9D1C…Ad2A`](https://sepolia.etherscan.io/address/0x9D1C28CC64409E15d7c0b80De4D0a7692095Ad2A) (canonical replica) | [`0x9D1C…Ad2A`](https://testnet.bscscan.com/address/0x9D1C28CC64409E15d7c0b80De4D0a7692095Ad2A) (burn/mint) |
+| Token pool | [`0xdE61…99B7`](https://sepolia.etherscan.io/address/0xdE61BAE56E79306B0b42Bf3297F3c138347099B7) (LockRelease) | [`0xdE61…99B7`](https://testnet.bscscan.com/address/0xdE61BAE56E79306B0b42Bf3297F3c138347099B7) (BurnMint) |
+
+Round-trip bridge test (100 DACT, default rate limits):
+
+- **Sepolia → BSC Testnet** (lock + mint, delivered in ~14 min — CCIP waits for
+  Ethereum finality): [CCIP message](https://ccip.chain.link/msg/0x4e4810247905eea661835ce22603fcafb441465786c65696daf566544842eaf8)
+- **BSC Testnet → Sepolia** (burn + release, delivered in ~1 min): [CCIP message](https://ccip.chain.link/msg/0xf30106e7f4da771faef88748cbb25197f944a377f4ffe37cafa9f02b29862ffb)
+
+Both legs settled exactly: pool balance and BSC total supply returned to zero
+after the round trip.
+
+### Using the testnet bridge
+
+With a funded testnet key in `.env` (Sepolia ETH / tBNB for gas — fees are paid
+in native by default), bridge with:
+
+```bash
+# Sepolia -> BSC Testnet
+AMOUNT=100 RECEIVER=0x... npx hardhat run scripts/06_bridge_tokens.js --network sepolia
+
+# BSC Testnet -> Sepolia
+AMOUNT=100 RECEIVER=0x... npx hardhat run scripts/06_bridge_tokens.js --network bscTestnet
+```
+
+The script approves the router, quotes `getFee`, sends via `ccipSend`, and prints
+a `https://ccip.chain.link/msg/<messageId>` link to track delivery. The sender
+needs testnet DACT: on Sepolia the replica's 1B supply was minted to the rehearsal
+deployer, so either bridge from that account or have it transfer you some first.
+
 ### Rate limits
 
 `05_apply_chain_updates.js` defaults to a **100,000 DACT bucket refilling over ~1 hour**
