@@ -1,4 +1,4 @@
-# DACT CCIP Bridge — Ethereum ⇄ BNB Chain
+# DACT CCIP Bridge, Ethereum - BNB Chain
 
 Bridges **Dac Token (DACT)** from Ethereum mainnet to BNB Smart Chain using
 [Chainlink CCIP](https://docs.chain.link/ccip)'s self-serve **Cross-Chain Token (CCT)** standard.
@@ -8,18 +8,7 @@ Bridges **Dac Token (DACT)** from Ethereum mainnet to BNB Smart Chain using
 The canonical DACT has a fixed 1B supply and no mint function, so the home chain
 uses **lock/release** and the destination chain uses **burn/mint**:
 
-```mermaid
-flowchart LR
-    subgraph Ethereum
-        U1[User] -->|approve + ccipSend| R1[CCIP Router]
-        R1 --> P1[LockReleaseTokenPool<br/>locks canonical DACT]
-    end
-    subgraph BNB Chain
-        P2[BurnMintTokenPool<br/>mints/burns DACT] --> U2[Receiver]
-        R2[CCIP Router] --> P2
-    end
-    P1 <-.CCIP DON.-> R2
-```
+![DACT bridge architecture](docs/architecture.svg)
 
 - **Ethereum → BSC**: DACT locked in the Ethereum pool, equal amount minted on BSC.
 - **BSC → Ethereum**: DACT burned on BSC, equal amount released from the Ethereum pool.
@@ -49,7 +38,7 @@ npx hardhat test
 
 Copy `.env.example` to `.env` and fill in RPC URLs, the deployer key, and an Etherscan v2 API key.
 
-## Deployment runbook (mainnet)
+## Deployment
 
 Run each script with `npx hardhat run scripts/<script> --network <network>`.
 Deployed addresses are recorded in `deployments/<network>.json` (committed —
@@ -59,7 +48,7 @@ step 5 reads the *other* chain's file).
 | --- | --- | --- | --- |
 | 1 | `01_deploy_token.js` | — (canonical token exists) | Deploy burn/mint DacToken |
 | 2 | `02_deploy_pool.js` | Deploy LockReleaseTokenPool | Deploy BurnMintTokenPool |
-| 3 | `03_claim_admin.js` | ⚠️ run as **token owner** (`0x1A5C…0E11`) | run as token's CCIP admin |
+| 3 | `03_claim_admin.js` | run as **token owner** (`0x1A5C…0E11`) | run as token's CCIP admin |
 | 4 | `04_accept_admin_and_set_pool.js` | accept + setPool | accept + setPool + grant pool mint/burn |
 | 5 | `05_apply_chain_updates.js` | wire to BSC pool + rate limits | wire to Ethereum pool + rate limits |
 | 6 | `06_bridge_tokens.js` | `AMOUNT=… RECEIVER=…` bridge out | bridge back |
@@ -104,10 +93,7 @@ npx hardhat test
 
 ## Security notes
 
-- The Ethereum pool custodies locked DACT; its `owner()` can change rate limits
-  and remote pools. Ownership is already held by a multisig; the same applies to
-  the BSC token's `DEFAULT_ADMIN_ROLE`.
-- Rate limits bound the damage of any single incident; keep them enabled.
+- Rate limits bound the damage of any single incident;
 - `config/networks.js` addresses were taken from Chainlink's published registry —
   re-verify against the [CCIP Directory](https://docs.chain.link/ccip/directory)
   before mainnet transactions.
