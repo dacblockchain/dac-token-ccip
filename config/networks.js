@@ -8,7 +8,7 @@
  *  - "remote": chain with the bridged representation; uses BurnMintTokenPool
  */
 module.exports = {
-  ethereum: {
+  mainnet: {
     chainId: 1,
     role: "home",
     remote: "bsc",
@@ -24,7 +24,7 @@ module.exports = {
   bsc: {
     chainId: 56,
     role: "remote",
-    remote: "ethereum",
+    remote: "mainnet",
     chainSelector: "11344663589394136015",
     router: "0x34B03Cb9086d7D758AC55af71584F81A598759FE",
     rmnProxy: "0x9e09697842194f77d315E0907F1Bda77922e8f84",
