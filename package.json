@@ -6,7 +6,8 @@
   "scripts": {
     "postinstall": "node scripts/postinstall.js",
     "compile": "hardhat compile",
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "webapp": "npm --prefix webapp install && npm --prefix webapp run dev"
   },
   "keywords": [],
   "author": "",

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DACT Bridge</title>
+    <meta name="description" content="Bridge DACT between Ethereum and BNB Chain with Chainlink CCIP" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <!-- Visible only if main.js never runs (page opened as a file or from the wrong server). -->
+    <div id="boot-error" style="max-width: 480px; margin: 24px auto; padding: 12px 16px; border: 1px solid #c0352b; border-radius: 10px; color: #c0352b; font: 15px/1.45 system-ui, sans-serif">
+      This page must be served by its dev server. From the repository run
+      <code>npm run webapp</code> (or <code>cd webapp &amp;&amp; npm run dev</code>) and open
+      <a href="http://localhost:5173/">http://localhost:5173/</a>.
+    </div>
+
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">D</span>
+        <span>DACT Bridge</span>
+      </div>
+      <div class="topbar-right">
+        <div class="segmented" role="group" aria-label="Network environment">
+          <button type="button" data-env="mainnet">Mainnet</button>
+          <button type="button" data-env="testnet">Testnet</button>
+        </div>
+        <button type="button" id="wallet-btn" class="wallet-btn">Connect MetaMask</button>
+      </div>
+    </header>
+
+    <main>
+      <div id="testnet-banner" class="banner" hidden>
+        Testnet mode: Sepolia ↔ BSC Testnet. Testnet DACT has no value.
+      </div>
+
+      <section class="card" aria-label="Bridge">
+        <div class="panel">
+          <div class="panel-head">
+            <span class="label">From</span>
+            <span class="balance">Balance: <button type="button" id="src-balance" class="linklike">—</button></span>
+          </div>
+          <div class="panel-row">
+            <div class="chain"><span id="src-logo" class="chain-logo"></span><span id="src-name"></span></div>
+            <div class="amount-wrap">
+              <input id="amount" inputmode="decimal" autocomplete="off" placeholder="0.0" aria-label="Amount of DACT to bridge" />
+              <button type="button" id="max-btn" class="pill">MAX</button>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" id="flip-btn" class="flip" aria-label="Swap direction" title="Swap direction">↓↑</button>
+
+        <div class="panel">
+          <div class="panel-head">
+            <span class="label">To</span>
+            <span class="balance">Balance: <span id="dst-balance">—</span></span>
+          </div>
+          <div class="panel-row">
+            <div class="chain"><span id="dst-logo" class="chain-logo"></span><span id="dst-name"></span></div>
+            <div id="receive-amount" class="receive">0.0</div>
+          </div>
+        </div>
+
+        <details id="receiver-box" class="receiver">
+          <summary>Send to a different address</summary>
+          <input id="receiver" autocomplete="off" spellcheck="false" placeholder="0x… receiver on the destination chain" aria-label="Receiver address" />
+          <p class="hint warn">
+            Use only an address you control on the destination chain. A Safe or other smart-contract wallet
+            does not exist at the same address on the other chain, and exchanges may not credit bridged deposits.
+          </p>
+          <p id="receiver-contract" class="hint danger" hidden>
+            This address is a smart contract on the destination chain. Make sure it can hold and move DACT.
+          </p>
+        </details>
+
+        <dl class="details">
+          <div><dt>CCIP fee</dt><dd id="fee">—</dd></div>
+          <div><dt>Bridge capacity available</dt><dd id="capacity">—</dd></div>
+          <div><dt>Estimated delivery</dt><dd id="delivery">—</dd></div>
+          <div><dt>Your gas balance</dt><dd id="native-balance">—</dd></div>
+        </dl>
+
+        <button type="button" id="action-btn" class="primary">Connect MetaMask</button>
+        <p id="action-hint" class="hint center"></p>
+        <p id="error" class="error" role="alert" hidden></p>
+      </section>
+
+      <section id="tracker" class="card tracker" aria-label="Transfer status" hidden>
+        <div class="tracker-head">
+          <h2>Transfer</h2>
+          <button type="button" id="tracker-close" class="linklike">Dismiss</button>
+        </div>
+        <p id="tracker-summary" class="tracker-summary"></p>
+        <ol class="steps">
+          <li id="step-sent"><span class="dot"></span><div><strong>Sent on source chain</strong><span id="step-sent-detail"></span></div></li>
+          <li id="step-ccip"><span class="dot"></span><div><strong>In transit through CCIP</strong><span id="step-ccip-detail"></span></div></li>
+          <li id="step-done"><span class="dot"></span><div><strong>Delivered</strong><span id="step-done-detail"></span></div></li>
+        </ol>
+        <div class="tracker-links">
+          <a id="track-link" target="_blank" rel="noopener">Track on CCIP Explorer ↗</a>
+          <button type="button" id="watch-asset-btn" class="linklike">Add DACT to MetaMask</button>
+        </div>
+      </section>
+
+      <section class="card addresses" aria-label="Official addresses">
+        <h2>Official addresses</h2>
+        <div id="address-list"></div>
+        <p class="hint">
+          Never send DACT directly to a token or pool address. It will not be bridged and cannot be recovered.
+        </p>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

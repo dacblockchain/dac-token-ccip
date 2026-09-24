@@ -37,11 +37,70 @@ uses **lock/release** and the destination chain uses **burn/mint**:
 
 ## Bridge your DACT
 
+You can bridge in two ways. Both make the same calls to the CCIP router.
+
+- **[Web app](#with-metamask-web-app)** (recommended): a local web page that uses
+  MetaMask. Your private key stays in your wallet.
+- **[Script](#with-the-script)**: `scripts/06_bridge_tokens.js`, run from the
+  command line with the wallet's private key in `.env`. Unlike the web app, it
+  can also pay the CCIP fee in LINK.
+
+[Delivery](#delivery), [Costs](#costs) and [Limits](#limits) are the same for both.
+
+### With MetaMask (web app)
+
+The web app in [`webapp/`](webapp/) runs on your machine. You need Node.js 18+,
+a browser with the [MetaMask](https://metamask.io/download/) extension, and in that
+wallet the DACT you want to bridge plus gas on the **source** chain (ETH on
+Ethereum, BNB on BSC).
+
+```bash
+npm run webapp     # from the repo root: installs webapp/ and starts it
+# or: cd webapp && npm install && npm run dev
+```
+
+Then open http://localhost:5173. Opening `webapp/index.html` directly as a file
+does not work; the page must come from this dev server.
+
+1. Click **Connect MetaMask**. Keep **Mainnet** selected at the top; **Testnet**
+   switches to Sepolia ↔ BSC Testnet.
+2. Pick the direction with the ↓↑ button and enter an amount (or click **MAX**).
+3. Check the CCIP fee, available bridge capacity, and estimated delivery shown
+   below the amount.
+4. Click the button and confirm each request in MetaMask. The button walks
+   you through each step:
+   - **Switch MetaMask to …**: switches the wallet to the source chain, and adds
+     BNB Chain to MetaMask if it is missing.
+   - **Approve … DACT**: allows the CCIP router to move exactly that amount.
+   - **Bridge to …**: sends the transfer, paying the CCIP fee in ETH or BNB.
+5. The **Transfer** card then tracks delivery. It links to the source transaction
+   and to the CCIP Explorer, and marks the transfer delivered when the DACT arrives.
+   It keeps tracking if you reload the page.
+
+To send to another address, open **Send to a different address**. Use only an
+address you control **on the destination chain**: a Safe or other smart-contract
+wallet does not automatically exist at the same address on the other chain, and
+many exchanges do not credit deposits that arrive through a bridge. The page
+warns you if the address is a contract on the destination chain.
+
+The page blocks the transfer before anything is signed if the amount is more than
+your balance or the bridge capacity available right now, or if you lack gas
+for the fee. **Add to MetaMask** (under *Official addresses*, or on the
+Transfer card) adds DACT to your wallet on that chain.
+
+By default the page reads balances, fees and rate limits through public RPC servers.
+To use your own, copy `webapp/.env.example` to `webapp/.env.local` and set the
+`VITE_*_RPC_URL` values. These values are bundled into the page, so never put
+keys there. The web app never reads the root `.env`. More details are in
+[webapp/README.md](webapp/README.md).
+
+### With the script
+
 `scripts/06_bridge_tokens.js` bridges from the chain you run it on to the other one.
 It approves the CCIP router, quotes the fee, sends the transfer, and prints a
 link to track delivery.
 
-### What you need
+#### What you need
 
 - Node.js 18+ and git
 - A wallet holding the DACT you want to bridge, plus gas on the **source** chain:
@@ -51,7 +110,7 @@ link to track delivery.
 - Optionally, your own RPC URLs (Alchemy, Infura, …). Public fallbacks are used
   otherwise, and they can be unreliable.
 
-### 1. Install
+#### 1. Install
 
 ```bash
 git clone <this repo> && cd dac-token-ccip
@@ -67,7 +126,7 @@ MAINNET_RPC_URL=https://...  # optional
 BSC_RPC_URL=https://...      # optional
 ```
 
-### 2. Send
+#### 2. Send
 
 ```bash
 # Ethereum -> BNB Chain
@@ -95,10 +154,13 @@ Sent. Tx: 0x…
 Track: https://ccip.chain.link/msg/0x…
 ```
 
-### 3. Wait for delivery
+#### 3. Wait for delivery
 
-Open the `Track` link. The tokens arrive at the receiver automatically; there is
-nothing to claim.
+Open the `Track` link to follow the transfer.
+
+### Delivery
+
+The tokens arrive at the receiver automatically; there is nothing to claim.
 
 | Direction | Typical delivery | Why |
 | --- | --- | --- |
@@ -120,15 +182,16 @@ BNB ≈ $780, Ethereum gas ≈ 1 gwei):
 | BSC → Ethereum | ≈ 0.006 BNB (≈ $4.60) |
 
 Most of the fee pays for gas on the destination chain, so both directions get
-more expensive when Ethereum gas prices rise. The script always shows the exact
-fee before sending. The fee goes to Chainlink; the DACT pools charge nothing.
+more expensive when Ethereum gas prices rise. The web app and the script both show
+the exact fee before sending. The fee goes to Chainlink; the DACT pools charge nothing.
 
 ### Limits
 
 Each direction has a rate limit of **6,000,000 DACT** that refills continuously
 (fully in about 1 hour). A transfer larger than the currently available amount
-fails: the script stops before sending, so no DACT moves and you only pay gas for
-the approval. Split very large transfers or retry later.
+fails. The web app disables the Bridge button and shows the capacity available
+right now. The script stops before sending, so no DACT moves and you only pay gas
+for the approval. Split very large transfers or retry later.
 
 ### Without this repo
 
@@ -178,6 +241,7 @@ returned to zero after the round trip.
 | `scripts/01…07_*.js` | Step-by-step deployment, registration, bridging, and admin handover |
 | `deployments/` | Deployed addresses per network |
 | `test/` | Token unit tests, end-to-end pool mechanics, admin handover |
+| `webapp/` | Local MetaMask bridge page (Vite + ethers) |
 
 ## Deploying (maintainers)
 
@@ -252,9 +316,9 @@ Round-trip test (100 DACT):
 - **Sepolia → BSC Testnet**: [CCIP message](https://ccip.chain.link/msg/0x4e4810247905eea661835ce22603fcafb441465786c65696daf566544842eaf8)
 - **BSC Testnet → Sepolia**: [CCIP message](https://ccip.chain.link/msg/0xf30106e7f4da771faef88748cbb25197f944a377f4ffe37cafa9f02b29862ffb)
 
-To try the bridge without real funds, follow [Bridge your DACT](#bridge-your-dact)
-with `--network sepolia` / `--network bscTestnet` and a key funded with Sepolia
-ETH / tBNB. Testnet DACT is a replica with no value; its whole supply is held by
+To try the bridge without real funds, select **Testnet** in the web app, or run the
+script with `--network sepolia` / `--network bscTestnet`. Either way you need a wallet
+funded with Sepolia ETH / tBNB. Testnet DACT is a replica with no value; its whole supply is held by
 the maintainers, so ask them for some.
 
 ## Testing
